@@ -1,0 +1,37 @@
+.jumbotron {
+  background: rgba(100, 100, 100, 0.5); 
+  margin:17%;
+  border-radius:35px;
+}
+
+.btn-main {
+   color: #333;
+   background-color: #f8f8f8;
+   border-color: #333;
+   opacity:0.85;
+}
+
+.btn-main:hover {
+    color: black;
+	font-size: 12pt;
+    background-color: #a8a8a8;
+    border-color: #633;
+	opacity:0.9;
+	transition:0.18s;
+}
+.custom-div {
+	text-align:center;
+	background-color: #f8f8f8;
+	opacity:1;
+	margin-top:2em;
+	margin-left:2em;
+	margin-right:2em;
+	border-radius:15px;
+}
+table{
+	margin:0 30px;
+	opacity:0.95;
+	background-color: #f8f8f8;
+	border-radius:15px;
+	color:black;
+}
