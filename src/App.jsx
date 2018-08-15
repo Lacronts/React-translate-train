@@ -5,7 +5,7 @@ import $ from 'jquery'
 import XLSX from 'xlsx'
 
 export default class App extends Component {
-	
+
 		constructor(props){
 			super(props)
 		this.state = {
@@ -16,15 +16,16 @@ export default class App extends Component {
 			file:[]
 			}
 		this.changePage = this.changePage.bind(this)
-		this.toStart = this.toStart.bind(this)	
-		this.handleSelect = this.handleSelect.bind(this)	
+		this.toStart = this.toStart.bind(this)
+		this.handleSelect = this.handleSelect.bind(this)
 		this.readFile = this.readFile.bind(this)
 		this.toMain = this.toMain.bind(this)
-		this.add = this.add.bind(this)		
-		this.del = this.del.bind(this)		
+		this.add = this.add.bind(this)
+		this.del = this.del.bind(this)
 		this.save = this.save.bind(this)
+		this.readyTransl = this.readyTransl.bind(this)		
 		}
-		
+
 		componentDidMount(){
 			$.ajax({
 			url : 'http://zrw-db2zab-01.zrw.oao.rzd:8080/translate_train/api.jsp',
@@ -38,31 +39,31 @@ export default class App extends Component {
 			});
 
 		}
-		
+
 		changePage(e){
 		this.setState({nameFile: e.target.files[0].name,
-						fileChoose:true})				
+						fileChoose:true})
 		}
-	
+
 		toStart(){
 		this.setState({
 			nameFile: '',
 			fileChoose:false,
-			keyMenu:0})		
+			keyMenu:0})
 		}
-		
+
 		handleSelect(selectedKey) {
 			this.setState({
 				keyMenu:selectedKey
 			})
-		}	
-		
+		}
+
 		readFile(object) {
 			const { bibl } = this.state
-			let train_str=[]			
+			let train_str=[]
 			let file = object.target.files[0]
 			let reader = new FileReader()
-			reader.readAsText(file)		
+			reader.readAsText(file)
 			reader.onload = function() {
 	     	let train_ish = reader.result.replace(/@/g, '')
 				bibl.map((row, rowidx)=>{
@@ -72,16 +73,32 @@ export default class App extends Component {
 					}
 				)
 			train_str = train_ish.split("#")
-			train_str.pop()	
+			train_str.pop()
 			this.setState({
 				file: train_str
-			})			
-			}.bind(this)			
-		}		
+			})
+			}.bind(this)
+		}
 
 		toMain(object){
 			this.readFile(object)
 			this.changePage(object)
+		}
+		
+		readyTransl(){
+			const { bibl, file } = this.state
+			let train_str=[]
+			let train_ish = file.join('#')
+			bibl.map((row, rowid)=>{
+				let sk = row.chin.replace(')','\\)')
+				let re = new RegExp(('\,'+sk+'\,'),'gi')
+				train_ish = train_ish.replace(re, ','+row.rus+',')
+				}
+			)
+			train_str = train_ish.split("#")
+			this.setState({
+				file: train_str
+			})
 		}
 		
 		add(){
@@ -93,18 +110,19 @@ export default class App extends Component {
 				url:"http://zrw-db2zab-01.zrw.oao.rzd:8080/translate_train/ins2.jsp",
 				data:formData,
 				success: function(data) {
-					{	
+					{
 						let newBibl = this.state.bibl
-						const newData = JSON.parse(data)	
+						const newData = JSON.parse(data)
 						newBibl.push(newData)
 						this.setState({
-							bibl:newBibl
-						})
+							bibl:newBibl},
+							this.readyTransl()
+							)
 					  }
 					}.bind(this)
 				})
 		}
-		
+
 		del(e){
 		let id = e.target.dataset.row;
 		$.ajax({
@@ -113,7 +131,7 @@ export default class App extends Component {
 				data:{'itemid':id},
 				success: function(r) {
 					{
-						let newBibl = this.state.bibl.filter(row=>row.id != id)
+						let newBibl = this.state.bibl.filter(row=>row.id !== id)
 						this.setState({
 							bibl:newBibl
 						})
@@ -121,7 +139,7 @@ export default class App extends Component {
 					}.bind(this)
 				})
 		}
-		
+
 		save(type='xlsx', fn, dl){
 			const elt = document.getElementById('table');
 			const wb = XLSX.utils.table_to_book(elt, {sheet:"Mob"});
@@ -129,18 +147,18 @@ export default class App extends Component {
 			XLSX.write(wb, {bookType:type, bookSST:true, type: 'base64'}) :
 			XLSX.writeFile(wb, fn || ('TrainA_RU.' + (type || 'xlsx')));
 		}
-		
+
 		render(){
 			const {toStart, handleSelect, toMain, add, del, save} = this
 			const {nameFile, fileChoose, keyMenu, file, bibl} = this.state
 			return(
-			<Router basename={'/translate_train'}>
-				<div className='main'>				
+			<Router basename="/translate_train">
+				<div className='main'>
 					<Route exact path="/" render={()=>(
 						fileChoose ? (
 							<Redirect to="/main" />
 							) : (
-						<Home 
+						<Home
 						nameFile={nameFile}
 						toMain={toMain}/>)
 					)}
@@ -157,21 +175,21 @@ export default class App extends Component {
 								  handleSelect={handleSelect}
 								  file={file}
 								  save={save}/>}
-					/>	
+					/>
 				<Route path="/transl_str" render={()=>
 					<Transl_str toStart={toStart}
 								keyMenu={keyMenu}
 								handleSelect={handleSelect}
 								file={file}
-								save={save}/>} 
-					/>	
+								save={save}/>}
+					/>
 				<Route path="/db" render={()=>
 					<DB toStart={toStart}
 						keyMenu={keyMenu}
 						handleSelect={handleSelect}
 						bibl={bibl}
 						add={add}
-						del={del}/>} />				
+						del={del}/>} />
 				</div>
 			</Router>
 			)
